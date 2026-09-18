@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Greenroot Adventure - {{ session.location }}</title>
+</head>
+<body style="font-family: sans-serif; max-width: 650px; margin: 40px auto; padding: 25px; background: #f4f4f9; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <h2>🌾 Location: {{ session.location }}</h2>
+    <p><strong>Hero:</strong> {{ session.name }} | <strong>HP:</strong> {{ session.hp }}/{{ session.max_hp }} | <strong>Gold:</strong> 🪙 {{ session.gold }}</p>
+    <p><strong>Inventory (Seeds):</strong> Tomatoes: {{ session.inventory.tomato_seeds }}, Corn: {{ session.inventory.corn_seeds }}</p>
+    <p><strong>Harvested Crops:</strong> Tomatoes: {{ session.crops.tomatoes }}, Corn: {{ session.crops.corn }}</p>
+    
+    <div style="background: #e9ecef; padding: 12px; border-left: 4px solid #2d6a4f; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0;"><strong>Log:</strong> {{ session.message }}</p>
+    </div>
+
+    <h3>Available Actions:</h3>
+    
+    {% if session.location == 'Farm Homestead' %}
+        <p><strong>Farm Plot Status:</strong> <code>{{ session.plot_state.upper() }}</code> {% if session.crop_type %}(Growing: {{ session.crop_type }}){% endif %}</p>
+        <form action="/action" method="POST">
+            {% if session.plot_state == 'empty' %}
+                <button name="action" value="plant_tomato" style="padding: 10px 15px; background: #52b788; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🌱 Plant Tomato Seeds</button>
+            {% elif session.plot_state == 'growing' %}
+                <button name="action" value="tend_plot" style="padding: 10px 15px; background: #40916c; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">💧 Tend / Water Plot</button>
+            {% elif session.plot_state == 'ready' %}
+                <button name="action" value="harvest_plot" style="padding: 10px 15px; background: #d4a373; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🎉 Harvest Crops</button>
+            {% endif %}
+        </form>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+        <h4>Travel Paths:</h4>
+        <form action="/action" method="POST">
+            <button name="action" value="travel_north" style="padding: 8px 12px; margin: 3px; cursor: pointer;">North ➔ Wild Fields</button>
+            <button name="action" value="travel_east" style="padding: 8px 12px; margin: 3px; cursor: pointer;">East ➔ Village Market</button>
+        </form>
+
+    {% elif session.location == 'Village Market' %}
+        <form action="/action" method="POST">
+            <button name="action" value="buy_tomato_seeds" style="padding: 10px 15px; background: #52b788; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🪙 Buy Tomato Seeds (10 Gold)</button>
+            <button name="action" value="sell_crops" style="padding: 10px 15px; background: #d4a373; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">💰 Sell All Harvested Crops</button>
+        </form>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+        <h4>Travel Paths:</h4>
+        <form action="/action" method="POST">
+            <button name="action" value="travel_west" style="padding: 8px 12px; margin: 3px; cursor: pointer;">West ➔ Farm Homestead</button>
+        </form>
+
+    {% elif session.location == 'Wild Fields' %}
+        <p>Overgrown grasslands where wild elements can be found.</p>
+        <form action="/action" method="POST">
+            <button name="action" value="travel_south" style="padding: 8px 12px; margin: 3px; cursor: pointer;">South ➔ Farm Homestead</button>
+            <button name="action" value="travel_east" style="padding: 8px 12px; margin: 3px; cursor: pointer;">East ➔ Deep Forest</button>
+        </form>
+
+    {% elif session.location == 'Deep Forest' %}
+        <p>A dense, shadowed woodland fraught with high-tier risk.</p>
+        <form action="/action" method="POST">
+            <button name="action" value="travel_west" style="padding: 8px 12px; margin: 3px; cursor: pointer;">West ➔ Wild Fields</button>
+        </form>
+    {% endif %}
+</body>
+</html>

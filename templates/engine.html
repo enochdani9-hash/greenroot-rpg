@@ -41,11 +41,17 @@
             padding: 15px; margin-bottom: 10px; text-align: left; cursor: pointer; font-family: inherit; font-size: 1.1rem; transition: 0.2s;
         }
         .choice-btn:hover { background: #222; border-color: #8b0000; padding-left: 20px; }
+        
+        #death-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 0, 0, 0.85); color: #8b0000; z-index: 30;
+            flex-direction: column; justify-content: center; align-items: center; text-transform: uppercase;
+        }
+        #death-screen h1 { font-size: 4rem; letter-spacing: 10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- UI: Character Creator -->
     <div id="creation-ui">
         <h2>Forge Your Wanderer</h2>
         <div class="input-group">
@@ -61,17 +67,20 @@
         <button class="start-btn" onclick="startGame()">Enter the Woods</button>
     </div>
 
-    <!-- The Live Game World -->
     <div id="game-container">
         <canvas id="gameCanvas" width="960" height="540" tabindex="0"></canvas>
         
-        <!-- Dialogue Overlay -->
         <div id="dialogue-ui">
             <div class="npc-name">The Blind Oracle</div>
             <div class="npc-text">"Another soul wanders into the rot. Tell me, wanderer... what do you seek in the cursed lands?"</div>
             <button class="choice-btn" onclick="closeDialogue()">> 'I seek the beast that slaughtered my kin.'</button>
             <button class="choice-btn" onclick="closeDialogue()">> 'I seek a cure for the plague.'</button>
             <button class="choice-btn" onclick="closeDialogue()">> (Draw your sword and walk away)</button>
+        </div>
+
+        <div id="death-screen">
+            <h1>You Died</h1>
+            <button class="start-btn" onclick="location.reload()">Rise Again</button>
         </div>
     </div>
 
@@ -81,8 +90,8 @@
         const creationUI = document.getElementById("creation-ui");
         const gameContainer = document.getElementById("game-container");
         const dialogueUI = document.getElementById("dialogue-ui");
+        const deathScreen = document.getElementById("death-screen");
 
-        // PRE-LOAD ASSETS
         const bgImage = new Image();
         bgImage.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80"; 
         
@@ -90,23 +99,23 @@
         const oracleImage = new Image();
         oracleImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
 
-        // Game Objects
         let player = { 
             name: "", charClass: "", x: 100, y: 350, w: 80, h: 80, 
-            speed: 5, color: "#8b0000", hp: 100, 
+            speed: 5, color: "#8b0000", hp: 100, maxHp: 100,
             direction: 1, attacking: 0, attackCooldown: 0 
         };
+        
         let oracle = { 
             name: "The Blind Oracle", x: 750, y: 320, w: 90, h: 90, 
-            color: "#5a3a78", hp: 100, isDead: false 
+            color: "#5a3a78", hp: 100, isDead: false,
+            attacking: 0, attackCooldown: 60 
         };
         
         let gameState = "playing"; 
 
-        // Universal Keyboard Tracker
         const keys = {};
         window.addEventListener("keydown", (e) => {
-            if(e.key === " ") e.preventDefault(); // Stop spacebar from scrolling page
+            if(e.key === " ") e.preventDefault(); 
             keys[e.key.toLowerCase()] = true;
             keys[e.code] = true; 
         });
@@ -123,11 +132,10 @@
 
             if (player.charClass === "knight") {
                 heroImage.src = "https://images.unsplash.com/photo-1605639732731-9a7493a38a7c?auto=format&fit=crop&w=150&q=80";
-                player.color = "#4a4a4a";
+                player.color = "#4a4a4a"; player.hp = 150; player.maxHp = 150;
             } else if (player.charClass === "rogue") {
                 heroImage.src = "https://images.unsplash.com/photo-1509460913899-515f1df34fac?auto=format&fit=crop&w=150&q=80";
-                player.speed = 7;
-                player.color = "#1c3d5a";
+                player.speed = 7; player.color = "#1c3d5a";
             } else {
                 heroImage.src = "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?auto=format&fit=crop&w=150&q=80";
                 player.color = "#2e4a2e";
@@ -143,7 +151,7 @@
         function engineLoop() {
             if (gameState === "playing") updatePhysics();
             renderGraphics();
-            requestAnimationFrame(engineLoop);
+            if (gameState !== "dead") requestAnimationFrame(engineLoop);
         }
 
         function updatePhysics() {
@@ -152,15 +160,16 @@
             if (keys["a"] && player.x > 0) { player.x -= player.speed; player.direction = -1; }
             if (keys["d"] && player.x < canvas.width - player.w) { player.x += player.speed; player.direction = 1; }
 
-            // Combat Logic
+            let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
+
+            // 1. Player Combat Logic (Fixed Spacebar detection)
             if (player.attackCooldown > 0) player.attackCooldown--;
             
-            if ((keys["space"] || keys["spacebar"]) && player.attackCooldown === 0) {
+            if ((keys["Space"] || keys[" "]) && player.attackCooldown === 0) {
                 player.attacking = 10; 
                 player.attackCooldown = 30; 
                 
-                let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
-                if (dist < 130 && !oracle.isDead) {
+                if (dist < 140 && !oracle.isDead) {
                     oracle.hp -= 34; 
                     if (oracle.hp <= 0) {
                         oracle.isDead = true;
@@ -171,8 +180,24 @@
             }
             if (player.attacking > 0) player.attacking--;
 
+            // 2. Enemy AI Logic (Oracle fights back!)
+            if (!oracle.isDead && dist < 150) {
+                if (oracle.attackCooldown > 0) oracle.attackCooldown--;
+                
+                if (oracle.attackCooldown <= 0) {
+                    player.hp -= 15; // Oracle deals damage
+                    oracle.attacking = 10;
+                    oracle.attackCooldown = 80; // Attacks every ~1.3 seconds
+                    
+                    if (player.hp <= 0) {
+                        gameState = "dead";
+                        deathScreen.style.display = "flex";
+                    }
+                }
+            }
+            if (oracle.attacking > 0) oracle.attacking--;
+
             // Dialogue Interaction
-            let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
             if (dist < 120 && keys["e"] && !oracle.isDead) {
                 gameState = "dialogue";
                 dialogueUI.style.display = "block";
@@ -218,6 +243,7 @@
                 ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+                // Draw Oracle
                 if (oracle.isDead) ctx.globalAlpha = 0.5; 
                 drawToken(oracleImage, oracle.x, oracle.y, oracle.w, oracle.h, oracle.color);
                 ctx.globalAlpha = 1.0;
@@ -229,11 +255,22 @@
                     ctx.fillStyle = "#000"; ctx.fillRect(oracle.x, oracle.y - 20, oracle.w, 5);
                     ctx.fillStyle = "#8b0000"; ctx.fillRect(oracle.x, oracle.y - 20, oracle.w * (oracle.hp/100), 5);
                 }
+                
+                // Draw Oracle Attack Flash
+                if (oracle.attacking > 0) {
+                    ctx.fillStyle = "rgba(139, 0, 0, 0.5)"; // Red flash
+                    ctx.fillRect(player.x, player.y, player.w, player.h);
+                }
 
+                // Draw Player
                 drawToken(heroImage, player.x, player.y, player.w, player.h, player.color);
                 ctx.fillStyle = "#e6d8c3"; 
                 ctx.fillText(player.name, player.x + (player.w / 2), player.y - 15);
+                
+                ctx.fillStyle = "#000"; ctx.fillRect(player.x, player.y - 25, player.w, 5);
+                ctx.fillStyle = "#a39171"; ctx.fillRect(player.x, player.y - 25, player.w * (player.hp/player.maxHp), 5);
 
+                // Draw Player Attack Slash
                 if (player.attacking > 0) {
                     ctx.fillStyle = "#ffffff";
                     let slashX = player.direction === 1 ? player.x + player.w : player.x - 20;

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Action Mode</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #c4b5a3;
+            font-family: 'Cinzel', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h2 { color: #8b0000; letter-spacing: 3px; }
+        canvas {
+            background: #111;
+            border: 2px solid #332b22;
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.2);
+        }
+        .controls { margin-top: 15px; font-family: monospace; color: #888; }
+    </style>
+</head>
+<body>
+
+    <h2>TARGET: {{ session.enemy_name }}</h2>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div class="controls">A / D to Move | SPACE to Attack</div>
+
+    <!-- Hidden form that submits automatically when you win -->
+    <form id="winForm" action="/action_win" method="POST" style="display: none;"></form>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Player & Enemy Logic (Placeholders for your HD Sprites)
+        let player = { x: 100, y: 300, w: 40, h: 80, color: '#a39171', speed: 5, attacking: false };
+        let enemy = { x: 600, y: 280, w: 60, h: 100, color: '#5a3a78', hp: 100 };
+        
+        let keys = {};
+        window.addEventListener("keydown", e => keys[e.code] = true);
+        window.addEventListener("keyup", e => keys[e.code] = false);
+
+        function gameLoop() {
+            // Movement
+            if (keys["KeyA"] && player.x > 0) player.x -= player.speed;
+            if (keys["KeyD"] && player.x < canvas.width - player.w) player.x += player.speed;
+
+            // Attack Logic
+            player.attacking = keys["Space"];
+            if (player.attacking && Math.abs(player.x - enemy.x) < 80) {
+                enemy.hp -= 2; // Deal damage if close enough
+            }
+
+            // Check Win Condition
+            if (enemy.hp <= 0) {
+                document.getElementById("winForm").submit();
+                return; // Stop the loop
+            }
+
+            // Draw Background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 380, canvas.width, 20); // Floor
+
+            // Draw Enemy
+            ctx.fillStyle = enemy.color;
+            ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+            // Enemy HP Bar
+            ctx.fillStyle = "#8b0000";
+            ctx.fillRect(enemy.x, enemy.y - 15, (enemy.hp / 100) * enemy.w, 5);
+
+            // Draw Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            
+            // Draw Attack Animation (Sword flash)
+            if (player.attacking) {
+                ctx.fillStyle = "white";
+                ctx.fillRect(player.x + player.w, player.y + 40, 40, 5); 
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the engine
+        gameLoop();
+    </script>
+</body>
+</html>

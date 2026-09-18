@@ -5,65 +5,45 @@
     <title>The Ashen Path - Engine</title>
     <style>
         body {
-            background-color: #050505;
-            color: #d4c5b0;
-            font-family: 'Palatino Linotype', serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            background-color: #050505; color: #d4c5b0; font-family: 'Palatino Linotype', serif;
+            margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
         }
-
+        
         /* Character Creation UI */
         #creation-ui {
-            background: rgba(17, 17, 17, 0.9);
-            padding: 40px;
-            border: 1px solid #5a4b38;
-            border-radius: 4px;
-            text-align: center;
-            z-index: 10;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            background: rgba(17, 17, 17, 0.95); padding: 40px; border: 1px solid #5a4b38;
+            border-radius: 4px; text-align: center; z-index: 10; box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            position: absolute;
         }
-
         h2 { color: #a39171; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 30px; }
-
         .input-group { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center;}
-        
         select, input[type="text"] {
-            background: #0a0a0a;
-            color: #c4b5a3;
-            border: 1px solid #332b22;
-            padding: 12px;
-            font-size: 1.1rem;
-            font-family: inherit;
-            width: 250px;
-            text-align: center;
-            outline: none;
+            background: #0a0a0a; color: #c4b5a3; border: 1px solid #332b22; padding: 12px;
+            font-size: 1.1rem; font-family: inherit; width: 250px; text-align: center; outline: none;
         }
-
-        button {
-            background: #141414;
-            color: #a39171;
-            border: 1px solid #5a4b38;
-            padding: 15px 40px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        button.start-btn {
+            background: #141414; color: #a39171; border: 1px solid #5a4b38; padding: 15px 40px;
+            font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
         }
-
-        button:hover { background: #1a1a1a; color: #e6d8c3; border-color: #8b0000; }
-
-        /* The Game Canvas */
-        #gameCanvas {
-            display: none;
-            background: #000;
-            border: 2px solid #332b22;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9);
+        button.start-btn:hover { background: #1a1a1a; color: #e6d8c3; border-color: #8b0000; }
+        
+        /* The Game Container */
+        #game-container { position: relative; display: none; }
+        #gameCanvas { background: #000; border: 2px solid #332b22; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+        
+        /* Cinematic Dialogue Overlay */
+        #dialogue-ui {
+            display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 800px; background: rgba(10, 10, 10, 0.95); border: 2px solid #5a4b38;
+            padding: 25px; box-sizing: border-box; border-radius: 4px; z-index: 20;
         }
+        .npc-name { color: #a39171; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; font-style: italic; }
+        .npc-text { font-size: 1.2rem; line-height: 1.6; margin-bottom: 20px; text-shadow: 1px 1px 2px #000; }
+        .choice-btn {
+            display: block; width: 100%; background: #1a1a1a; color: #c4b5a3; border: 1px solid #332b22;
+            padding: 15px; margin-bottom: 10px; text-align: left; cursor: pointer; font-family: inherit; font-size: 1.1rem; transition: 0.2s;
+        }
+        .choice-btn:hover { background: #222; border-color: #8b0000; padding-left: 20px; }
     </style>
 </head>
 <body>
@@ -71,124 +51,159 @@
     <!-- UI: Character Creator -->
     <div id="creation-ui">
         <h2>Forge Your Wanderer</h2>
-        
         <div class="input-group">
             <input type="text" id="heroName" value="Wanderer" placeholder="Name">
         </div>
-
         <div class="input-group">
             <select id="heroClass">
                 <option value="knight">The Ashen Knight (Heavy)</option>
-                <option value="rogue">The Blind Oracle (Magic)</option>
+                <option value="rogue">The Shadow Rogue (Fast)</option>
                 <option value="spirit">The Rootbound Spirit (Wild)</option>
             </select>
         </div>
-
-        <button onclick="startGame()">Enter the Woods</button>
+        <button class="start-btn" onclick="startGame()">Enter the Woods</button>
     </div>
 
-    <!-- UI: The Custom Game Engine Screen -->
-    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    <!-- The Live Game World -->
+    <div id="game-container">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        
+        <!-- Dialogue Overlay (Hidden until you talk to an NPC) -->
+        <div id="dialogue-ui">
+            <div class="npc-name">The Blind Oracle</div>
+            <div class="npc-text">"Another soul wanders into the rot. Tell me, wanderer... what do you seek in the cursed lands?"</div>
+            <button class="choice-btn" onclick="closeDialogue()">> 'I seek the beast that slaughtered my kin.'</button>
+            <button class="choice-btn" onclick="closeDialogue()">> 'I seek a cure for the plague.'</button>
+            <button class="choice-btn" onclick="closeDialogue()">> (Draw your sword and walk away)</button>
+        </div>
+    </div>
 
     <script>
-        // --- CUSTOM GAME ENGINE LOGIC --- //
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const creationUI = document.getElementById("creation-ui");
+        const gameContainer = document.getElementById("game-container");
+        const dialogueUI = document.getElementById("dialogue-ui");
 
-        // 1. PRE-LOAD THE HD ASSETS
+        // PRE-LOAD ASSETS
         const bgImage = new Image();
         bgImage.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80"; 
         
         const heroImage = new Image(); 
-        // heroImage.src will be set dynamically based on what the player chooses!
+        
+        // Setup the NPC!
+        const oracleImage = new Image();
+        oracleImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
 
-        // The Player Object
-        let player = {
-            name: "",
-            charClass: "",
-            x: 450,
-            y: 250,
-            w: 80, // Increased size for the HD sprite
-            h: 80,
-            speed: 5,
-            hp: 100
-        };
+        // Game Objects
+        let player = { name: "", charClass: "", x: 100, y: 350, w: 80, h: 80, speed: 5, hp: 100 };
+        let oracle = { name: "The Blind Oracle", x: 750, y: 320, w: 90, h: 90 };
+        
+        let gameState = "playing"; // Tracks if we are walking or talking
 
         const keys = {};
         window.addEventListener("keydown", (e) => keys[e.code] = true);
         window.addEventListener("keyup", (e) => keys[e.code] = false);
 
         function startGame() {
-            player.name = document.getElementById("heroName").value;
+            player.name = document.getElementById("heroName").value || "Wanderer";
             player.charClass = document.getElementById("heroClass").value;
 
-            // Dynamically assign the HD character portrait based on the chosen class!
+            // Assign proper avatar
             if (player.charClass === "knight") {
                 heroImage.src = "https://images.unsplash.com/photo-1605639732731-9a7493a38a7c?auto=format&fit=crop&w=150&q=80";
-                player.hp = 150;
             } else if (player.charClass === "rogue") {
-                heroImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
+                heroImage.src = "https://images.unsplash.com/photo-1509460913899-515f1df34fac?auto=format&fit=crop&w=150&q=80";
                 player.speed = 7;
-            } else if (player.charClass === "spirit") {
+            } else {
                 heroImage.src = "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?auto=format&fit=crop&w=150&q=80";
             }
 
+            // Hide menu, show game
             creationUI.style.display = "none";
-            canvas.style.display = "block";
+            gameContainer.style.display = "block";
+            
             requestAnimationFrame(engineLoop);
         }
 
         function engineLoop() {
-            updatePhysics();
+            if (gameState === "playing") {
+                updatePhysics();
+            }
             renderGraphics();
             requestAnimationFrame(engineLoop);
         }
 
         function updatePhysics() {
-            if (keys["KeyW"] && player.y > 0) player.y -= player.speed;
+            // Movement (Restricted to the 'floor' of the image)
+            if (keys["KeyW"] && player.y > 250) player.y -= player.speed; 
             if (keys["KeyS"] && player.y < canvas.height - player.h) player.y += player.speed;
             if (keys["KeyA"] && player.x > 0) player.x -= player.speed;
             if (keys["KeyD"] && player.x < canvas.width - player.w) player.x += player.speed;
+
+            // Collision Detection with the NPC!
+            let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
+            if (dist < 120 && keys["KeyE"]) {
+                // Trigger the Story Dialogue!
+                gameState = "dialogue";
+                dialogueUI.style.display = "block";
+                keys["KeyE"] = false; // Reset key to prevent spam
+            }
+        }
+
+        function closeDialogue() {
+            gameState = "playing";
+            dialogueUI.style.display = "none";
+            player.x -= 30; // Push player back slightly so they don't get stuck talking
+        }
+
+        // Helper function to draw circular RPG tokens
+        function drawToken(img, x, y, w, h) {
+            if (!img.complete) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(img, x, y, w, h);
+            ctx.restore();
+            
+            ctx.strokeStyle = "#a39171";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true);
+            ctx.stroke();
         }
 
         function renderGraphics() {
-            // 1. Draw the HD Background Image (Replacing the black void)
-            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-
-            // 2. Add a dark vignette overlay for atmosphere
-            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            // 1. Draw Environment
+            if (bgImage.complete) {
+                ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#111"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; // Atmosphere shadow
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Draw the Player's chosen HD Sprite (Replacing the red square)
-            if (heroImage.complete) {
-                // Creates a circular clipping mask so the image looks like an RPG token
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(player.x + (player.w/2), player.y + (player.h/2), player.w/2, 0, Math.PI * 2, true);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(heroImage, player.x, player.y, player.w, player.h);
-                ctx.restore();
-                
-                // Add a border ring around the character token
-                ctx.strokeStyle = "#a39171";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(player.x + (player.w/2), player.y + (player.h/2), player.w/2, 0, Math.PI * 2, true);
-                ctx.stroke();
-            }
+            // 2. Draw Oracle NPC
+            drawToken(oracleImage, oracle.x, oracle.y, oracle.w, oracle.h);
+            ctx.fillStyle = "#e6d8c3"; ctx.font = "bold 14px 'Palatino Linotype'"; ctx.textAlign = "center";
+            ctx.fillText(oracle.name, oracle.x + (oracle.w / 2), oracle.y - 10);
 
-            // 4. Draw Player Name & Health Bar overhead
-            ctx.fillStyle = "#e6d8c3";
-            ctx.font = "bold 14px 'Palatino Linotype'";
-            ctx.textAlign = "center";
+            // 3. Draw Player
+            drawToken(heroImage, player.x, player.y, player.w, player.h);
+            ctx.fillStyle = "#e6d8c3"; 
             ctx.fillText(player.name, player.x + (player.w / 2), player.y - 15);
-            
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
-            ctx.fillRect(player.x, player.y - 10, player.w, 6);
-            ctx.fillStyle = "#8b0000";
-            ctx.fillRect(player.x, player.y - 10, player.w * (player.hp / 150), 6);
+
+            // 4. Draw Interaction Prompt if close enough
+            if (gameState === "playing") {
+                let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
+                if (dist < 120) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 18px 'Palatino Linotype'";
+                    ctx.fillText("[Press E to Speak]", player.x + (player.w/2), player.y - 35);
+                }
+            }
         }
     </script>
 </body>

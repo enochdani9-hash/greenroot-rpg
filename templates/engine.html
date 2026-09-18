@@ -94,23 +94,30 @@
 
         const bgImage = new Image();
         bgImage.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80"; 
-        
         const heroImage = new Image(); 
-        const oracleImage = new Image();
-        oracleImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
+        const enemyImage = new Image();
+        enemyImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
+        const mobImage = new Image();
+        mobImage.src = "https://images.unsplash.com/photo-1517409252327-0d71a826477d?auto=format&fit=crop&w=150&q=80"; 
 
+        let currentLevel = 1;
+
+        // Player now has attackPower
         let player = { 
             name: "", charClass: "", x: 100, y: 350, w: 80, h: 80, 
             speed: 5, color: "#8b0000", hp: 100, maxHp: 100,
-            direction: 1, attacking: 0, attackCooldown: 0 
+            attackPower: 34, direction: 1, attacking: 0, attackCooldown: 0 
         };
         
-        let oracle = { 
+        let boss = { 
             name: "The Blind Oracle", x: 750, y: 320, w: 90, h: 90, 
-            color: "#5a3a78", hp: 100, isDead: false,
+            color: "#5a3a78", hp: 100, maxHp: 100, isDead: false,
             attacking: 0, attackCooldown: 60 
         };
         
+        let mobs = [];
+        let items = []; // NEW: Array to hold dropped loot
+        let spawnTimer = 0;
         let gameState = "playing"; 
 
         const keys = {};
@@ -132,10 +139,10 @@
 
             if (player.charClass === "knight") {
                 heroImage.src = "https://images.unsplash.com/photo-1605639732731-9a7493a38a7c?auto=format&fit=crop&w=150&q=80";
-                player.color = "#4a4a4a"; player.hp = 150; player.maxHp = 150;
+                player.color = "#4a4a4a"; player.hp = 150; player.maxHp = 150; player.attackPower = 40;
             } else if (player.charClass === "rogue") {
                 heroImage.src = "https://images.unsplash.com/photo-1509460913899-515f1df34fac?auto=format&fit=crop&w=150&q=80";
-                player.speed = 7; player.color = "#1c3d5a";
+                player.speed = 7; player.color = "#1c3d5a"; player.attackPower = 25;
             } else {
                 heroImage.src = "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?auto=format&fit=crop&w=150&q=80";
                 player.color = "#2e4a2e";
@@ -144,7 +151,6 @@
             creationUI.style.display = "none";
             gameContainer.style.display = "block";
             canvas.focus(); 
-            
             requestAnimationFrame(engineLoop);
         }
 
@@ -158,130 +164,195 @@
             if (keys["w"] && player.y > 250) player.y -= player.speed; 
             if (keys["s"] && player.y < canvas.height - player.h) player.y += player.speed;
             if (keys["a"] && player.x > 0) { player.x -= player.speed; player.direction = -1; }
-            if (keys["d"] && player.x < canvas.width - player.w) { player.x += player.speed; player.direction = 1; }
+            if (keys["d"]) { 
+                player.x += player.speed; 
+                player.direction = 1; 
+                if (player.x > canvas.width) {
+                    if (currentLevel === 1) loadLevelTwo();
+                    else if (currentLevel === 2) player.x = canvas.width - player.w;
+                }
+            }
 
-            let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
+            // --- LOOT PICKUP LOGIC ---
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                let dist = Math.hypot(player.x + (player.w/2) - item.x, player.y + (player.h/2) - item.y);
+                if (dist < 50) {
+                    if (item.type === "health") {
+                        player.hp = Math.min(player.maxHp, player.hp + 40);
+                    } else if (item.type === "weapon") {
+                        player.attackPower += 30; // Massive damage boost
+                    }
+                    items.splice(i, 1); // Remove item from world
+                }
+            }
 
-            // 1. Player Combat Logic (Fixed Spacebar detection)
             if (player.attackCooldown > 0) player.attackCooldown--;
-            
             if ((keys["Space"] || keys[" "]) && player.attackCooldown === 0) {
                 player.attacking = 10; 
                 player.attackCooldown = 30; 
                 
-                if (dist < 140 && !oracle.isDead) {
-                    oracle.hp -= 34; 
-                    if (oracle.hp <= 0) {
-                        oracle.isDead = true;
-                        oracle.name = "Slain Oracle";
-                        oracle.color = "#222"; 
+                let bossDist = Math.hypot(player.x - boss.x, player.y - boss.y);
+                if (bossDist < 140 && !boss.isDead) {
+                    boss.hp -= player.attackPower; 
+                    if (boss.hp <= 0) {
+                        boss.isDead = true;
+                        boss.name = "Slain Boss";
+                        boss.color = "#222"; 
+                        // Boss drops an upgrade weapon!
+                        items.push({type: "weapon", x: boss.x + 40, y: boss.y + 70, color: "#ffd700"});
+                    }
+                }
+
+                for (let i = mobs.length - 1; i >= 0; i--) {
+                    let m = mobs[i];
+                    let mDist = Math.hypot(player.x - m.x, player.y - m.y);
+                    if (mDist < 140) {
+                        m.hp -= player.attackPower;
+                        if (m.hp <= 0) {
+                            // Mobs have a 40% chance to drop health potions
+                            if (Math.random() < 0.4) {
+                                items.push({type: "health", x: m.x + 25, y: m.y + 25, color: "#ff4444"});
+                            }
+                            mobs.splice(i, 1);
+                        }
                     }
                 }
             }
             if (player.attacking > 0) player.attacking--;
 
-            // 2. Enemy AI Logic (Oracle fights back!)
-            if (!oracle.isDead && dist < 150) {
-                if (oracle.attackCooldown > 0) oracle.attackCooldown--;
-                
-                if (oracle.attackCooldown <= 0) {
-                    player.hp -= 15; // Oracle deals damage
-                    oracle.attacking = 10;
-                    oracle.attackCooldown = 80; // Attacks every ~1.3 seconds
-                    
-                    if (player.hp <= 0) {
-                        gameState = "dead";
-                        deathScreen.style.display = "flex";
-                    }
+            let bossDist = Math.hypot(player.x - boss.x, player.y - boss.y);
+            if (!boss.isDead && bossDist < 150) {
+                if (boss.attackCooldown > 0) boss.attackCooldown--;
+                if (boss.attackCooldown <= 0) {
+                    player.hp -= 15; 
+                    boss.attacking = 10; boss.attackCooldown = 80; 
+                    checkDeath();
                 }
             }
-            if (oracle.attacking > 0) oracle.attacking--;
+            if (boss.attacking > 0) boss.attacking--;
 
-            // Dialogue Interaction
-            if (dist < 120 && keys["e"] && !oracle.isDead) {
-                gameState = "dialogue";
-                dialogueUI.style.display = "block";
-                keys["e"] = false; 
+            if (currentLevel === 2) {
+                spawnTimer++;
+                if (spawnTimer > 120 && mobs.length < 6) {
+                    mobs.push({
+                        x: canvas.width + 50, y: Math.random() * 200 + 250, 
+                        w: 50, h: 50, speed: Math.random() * 2 + 1.5,
+                        hp: 40, maxHp: 40, color: "#111", attacking: 0, attackCooldown: 0
+                    });
+                    spawnTimer = 0;
+                }
             }
+
+            for (let i = mobs.length - 1; i >= 0; i--) {
+                let m = mobs[i];
+                if (m.x > player.x) m.x -= m.speed;
+                if (m.x < player.x) m.x += m.speed;
+                if (m.y > player.y) m.y -= m.speed;
+                if (m.y < player.y) m.y += m.speed;
+
+                let mDist = Math.hypot(player.x - m.x, player.y - m.y);
+                if (mDist < 70) {
+                    if (m.attackCooldown <= 0) {
+                        player.hp -= 5; 
+                        m.attacking = 10; m.attackCooldown = 60;
+                        checkDeath();
+                    }
+                }
+                if (m.attackCooldown > 0) m.attackCooldown--;
+                if (m.attacking > 0) m.attacking--;
+            }
+
+            if (currentLevel === 1 && bossDist < 120 && keys["e"] && !boss.isDead) {
+                gameState = "dialogue"; dialogueUI.style.display = "block"; keys["e"] = false; 
+            }
+        }
+
+        function checkDeath() {
+            if (player.hp <= 0) { gameState = "dead"; deathScreen.style.display = "flex"; }
+        }
+
+        function loadLevelTwo() {
+            currentLevel = 2; player.x = 10; mobs = []; items = []; 
+            bgImage.src = "https://images.unsplash.com/photo-1505533088915-1fa8d39eb2b7?auto=format&fit=crop&w=1000&q=80";
+            boss.name = "The Ashen Guard"; boss.hp = 200; boss.maxHp = 200; boss.isDead = false; boss.color = "#440000"; 
+            enemyImage.src = "https://images.unsplash.com/photo-1542317148-8b4bdccb33ea?auto=format&fit=crop&w=150&q=80"; 
         }
 
         function closeDialogue() {
-            gameState = "playing";
-            dialogueUI.style.display = "none";
-            player.x -= 30; 
-            canvas.focus();
+            gameState = "playing"; dialogueUI.style.display = "none"; player.x -= 30; canvas.focus();
         }
 
         function drawToken(img, x, y, w, h, fallbackColor) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true);
-            
-            if (img.complete && img.naturalWidth > 0) {
-                ctx.clip();
-                ctx.drawImage(img, x, y, w, h);
-            } else {
-                ctx.fillStyle = fallbackColor;
-                ctx.fill();
-            }
+            ctx.save(); ctx.beginPath(); ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true);
+            if (img.complete && img.naturalWidth > 0) { ctx.clip(); ctx.drawImage(img, x, y, w, h); } 
+            else { ctx.fillStyle = fallbackColor; ctx.fill(); }
             ctx.restore();
-            
-            ctx.strokeStyle = "#a39171";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true);
-            ctx.stroke();
+            ctx.strokeStyle = "#a39171"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + (w/2), y + (h/2), w/2, 0, Math.PI * 2, true); ctx.stroke();
         }
 
         function renderGraphics() {
             try {
-                if (bgImage.complete && bgImage.naturalWidth > 0) {
-                    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-                } else {
-                    ctx.fillStyle = "#111"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (bgImage.complete && bgImage.naturalWidth > 0) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+                else { ctx.fillStyle = "#111"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Draw Oracle
-                if (oracle.isDead) ctx.globalAlpha = 0.5; 
-                drawToken(oracleImage, oracle.x, oracle.y, oracle.w, oracle.h, oracle.color);
+                // Draw Items (Loot)
+                items.forEach(item => {
+                    ctx.beginPath();
+                    ctx.arc(item.x, item.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = item.color;
+                    ctx.fill();
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = item.color;
+                    ctx.strokeStyle = "#fff";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // Reset
+                });
+
+                if (boss.isDead) ctx.globalAlpha = 0.5; 
+                drawToken(enemyImage, boss.x, boss.y, boss.w, boss.h, boss.color);
                 ctx.globalAlpha = 1.0;
 
                 ctx.fillStyle = "#e6d8c3"; ctx.font = "bold 14px 'Palatino Linotype'"; ctx.textAlign = "center";
-                ctx.fillText(oracle.name, oracle.x + (oracle.w / 2), oracle.y - 10);
+                ctx.fillText(boss.name, boss.x + (boss.w / 2), boss.y - 10);
                 
-                if (!oracle.isDead) {
-                    ctx.fillStyle = "#000"; ctx.fillRect(oracle.x, oracle.y - 20, oracle.w, 5);
-                    ctx.fillStyle = "#8b0000"; ctx.fillRect(oracle.x, oracle.y - 20, oracle.w * (oracle.hp/100), 5);
+                if (!boss.isDead) {
+                    ctx.fillStyle = "#000"; ctx.fillRect(boss.x, boss.y - 20, boss.w, 5);
+                    ctx.fillStyle = "#8b0000"; ctx.fillRect(boss.x, boss.y - 20, boss.w * (boss.hp/boss.maxHp), 5);
                 }
                 
-                // Draw Oracle Attack Flash
-                if (oracle.attacking > 0) {
-                    ctx.fillStyle = "rgba(139, 0, 0, 0.5)"; // Red flash
-                    ctx.fillRect(player.x, player.y, player.w, player.h);
+                if (boss.attacking > 0) {
+                    ctx.fillStyle = "rgba(139, 0, 0, 0.5)"; ctx.fillRect(player.x, player.y, player.w, player.h);
                 }
 
-                // Draw Player
+                mobs.forEach(m => {
+                    drawToken(mobImage, m.x, m.y, m.w, m.h, m.color);
+                    ctx.fillStyle = "#000"; ctx.fillRect(m.x, m.y - 10, m.w, 4);
+                    ctx.fillStyle = "#ff4444"; ctx.fillRect(m.x, m.y - 10, m.w * (m.hp/m.maxHp), 4);
+                    if (m.attacking > 0) { ctx.fillStyle = "rgba(139, 0, 0, 0.5)"; ctx.fillRect(player.x, player.y, player.w, player.h); }
+                });
+
                 drawToken(heroImage, player.x, player.y, player.w, player.h, player.color);
+                
+                // Show Player Stats (ATK) over their head
                 ctx.fillStyle = "#e6d8c3"; 
-                ctx.fillText(player.name, player.x + (player.w / 2), player.y - 15);
+                ctx.fillText(player.name + " (ATK: " + player.attackPower + ")", player.x + (player.w / 2), player.y - 15);
                 
                 ctx.fillStyle = "#000"; ctx.fillRect(player.x, player.y - 25, player.w, 5);
                 ctx.fillStyle = "#a39171"; ctx.fillRect(player.x, player.y - 25, player.w * (player.hp/player.maxHp), 5);
 
-                // Draw Player Attack Slash
                 if (player.attacking > 0) {
                     ctx.fillStyle = "#ffffff";
                     let slashX = player.direction === 1 ? player.x + player.w : player.x - 20;
                     ctx.fillRect(slashX, player.y + 30, 20, 50);
                 }
 
-                if (gameState === "playing" && !oracle.isDead) {
-                    let dist = Math.hypot(player.x - oracle.x, player.y - oracle.y);
+                if (currentLevel === 1 && gameState === "playing" && !boss.isDead) {
+                    let dist = Math.hypot(player.x - boss.x, player.y - boss.y);
                     if (dist < 120) {
-                        ctx.fillStyle = "#ffffff";
-                        ctx.font = "bold 18px 'Palatino Linotype'";
+                        ctx.fillStyle = "#ffffff"; ctx.font = "bold 18px 'Palatino Linotype'";
                         ctx.fillText("[Press E to Speak]", player.x + (player.w/2), player.y - 35);
                     }
                 }

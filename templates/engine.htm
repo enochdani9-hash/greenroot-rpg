@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom RPG Engine</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #d4c5b0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Character Creation UI */
+        #creation-ui {
+            background: #111;
+            padding: 40px;
+            border: 2px solid #332b22;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        
+        select, input {
+            background: #222;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px;
+            font-size: 1.1rem;
+            font-family: inherit;
+        }
+
+        button {
+            background: #440000;
+            color: #fff;
+            border: 1px solid #ff4444;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { background: #ff4444; color: #000; }
+
+        /* The Game Canvas (Hidden until character is created) */
+        #gameCanvas {
+            display: none;
+            background: #1a1a1a;
+            border: 2px solid #332b22;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI: Character Creator -->
+    <div id="creation-ui">
+        <h2>FORGE YOUR WANDERER</h2>
+        
+        <div class="input-group">
+            <label>Name: </label>
+            <input type="text" id="heroName" value="Ashen">
+        </div>
+
+        <div class="input-group">
+            <label>Class: </label>
+            <select id="heroClass">
+                <option value="knight">Fallen Knight (High Health)</option>
+                <option value="rogue">Shadow Rogue (High Speed)</option>
+                <option value="mage">Blood Mage (High Damage)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Aura Color: </label>
+            <input type="color" id="heroColor" value="#ff0000">
+        </div>
+
+        <button onclick="startGame()">Enter the World</button>
+    </div>
+
+    <!-- UI: The Custom Game Engine Screen -->
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+    <script>
+        // --- CUSTOM GAME ENGINE LOGIC --- //
+        
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const creationUI = document.getElementById("creation-ui");
+
+        // The Player Object
+        let player = {
+            name: "",
+            charClass: "",
+            x: 480,
+            y: 270,
+            w: 40,
+            h: 40,
+            color: "",
+            speed: 4,
+            hp: 100
+        };
+
+        // Keyboard State Tracker
+        const keys = {};
+        window.addEventListener("keydown", (e) => keys[e.code] = true);
+        window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+        // Transition from Creation to Gameplay
+        function startGame() {
+            // Apply creation choices to the player object
+            player.name = document.getElementById("heroName").value;
+            player.charClass = document.getElementById("heroClass").value;
+            player.color = document.getElementById("heroColor").value;
+
+            // Adjust stats based on class choice
+            if (player.charClass === "rogue") player.speed = 7;
+            if (player.charClass === "knight") player.hp = 150;
+
+            // Hide UI, Show Canvas
+            creationUI.style.display = "none";
+            canvas.style.display = "block";
+
+            // Start the Engine Loop
+            requestAnimationFrame(engineLoop);
+        }
+
+        // The Core Engine Loop (Runs 60 times per second)
+        function engineLoop() {
+            updatePhysics();
+            renderGraphics();
+            requestAnimationFrame(engineLoop);
+        }
+
+        // Handle all math, movement, and collision
+        function updatePhysics() {
+            if (keys["KeyW"] && player.y > 0) player.y -= player.speed;
+            if (keys["KeyS"] && player.y < canvas.height - player.h) player.y += player.speed;
+            if (keys["KeyA"] && player.x > 0) player.x -= player.speed;
+            if (keys["KeyD"] && player.x < canvas.width - player.w) player.x += player.speed;
+        }
+
+        // Handle all drawing to the screen
+        function renderGraphics() {
+            // 1. Clear the previous frame (draw the floor)
+            ctx.fillStyle = "#161616";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Draw some basic environment (trees/walls)
+            ctx.fillStyle = "#0a0a0a";
+            ctx.fillRect(100, 100, 80, 150); // Pillar 1
+            ctx.fillRect(700, 300, 80, 150); // Pillar 2
+
+            // 3. Draw the Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+
+            // 4. Draw Player Name & Health overhead
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "14px Courier New";
+            ctx.textAlign = "center";
+            ctx.fillText(player.name, player.x + (player.w / 2), player.y - 10);
+            
+            // Health bar
+            ctx.fillStyle = "red";
+            ctx.fillRect(player.x, player.y - 5, player.w, 4);
+        }
+    </script>
+</body>
+</html>

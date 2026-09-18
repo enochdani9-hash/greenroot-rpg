@@ -3,97 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Forge: Cyber-Hack</title>
+    <title>The Ashen Path</title>
     <style>
         body {
-            background-color: #0d1117; /* Deep space dark blue/grey */
-            color: #c9d1d9;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #050505;
+            color: #c4b5a3;
+            font-family: 'Palatino Linotype', serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
-        }
-
-        .container {
             text-align: center;
-            background: rgba(22, 27, 34, 0.8);
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
         }
 
         h1 {
-            color: #00ffff; /* Neon Cyan */
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            font-size: 3.5rem;
+            color: #a39171;
+            margin-bottom: 5px;
+            letter-spacing: 6px;
             text-transform: uppercase;
-            letter-spacing: 4px;
+            font-weight: normal;
+            border-bottom: 1px solid #332b22;
+            padding-bottom: 20px;
         }
 
         p {
-            color: #ff00ff; /* Neon Magenta */
             font-size: 1.2rem;
-            margin-bottom: 30px;
-            text-shadow: 0 0 5px #ff00ff;
+            color: #665b4c;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
         input[type="text"] {
-            background: #0d1117;
-            border: 2px solid #30363d;
-            color: #00ffff;
-            padding: 15px;
-            font-size: 1.2rem;
-            border-radius: 8px;
-            width: 80%;
-            margin-bottom: 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #5a4b38;
+            color: #c4b5a3;
+            padding: 10px;
+            font-size: 1.5rem;
             text-align: center;
-            outline: none;
             font-family: inherit;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+            width: 300px;
         }
-
-        input[type="text"]:focus {
-            border-color: #00ffff;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-        }
+        
+        input[type="text"]::placeholder { color: #332b22; }
 
         button {
-            background: transparent;
-            color: #00ffff;
-            border: 2px solid #00ffff;
-            padding: 15px 30px;
+            background: #141414;
+            color: #a39171;
+            border: 1px solid #5a4b38;
+            padding: 15px 40px;
             font-size: 1.2rem;
-            border-radius: 8px;
             cursor: pointer;
             text-transform: uppercase;
+            letter-spacing: 3px;
             font-family: inherit;
-            font-weight: bold;
             transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) inset;
         }
 
         button:hover {
-            background: #00ffff;
-            color: #0d1117;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            background: #1a1a1a;
+            color: #e6d8c3;
+            border-color: #a39171;
+            box-shadow: 0 0 15px rgba(163, 145, 113, 0.2);
         }
+        
+        .death-msg { color: #8b0000; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Word Forge</h1>
-        <p>// INITIATE PROTOCOL //</p>
-        <form action="/start" method="POST">
-            <input type="text" name="name" placeholder="ENTER CODENAME" required autocomplete="off">
-            <br>
-            <button type="submit">Initialize Link</button>
-        </form>
-    </div>
+    <h1>The Ashen Path</h1>
+    <p>"In the dark, all souls burn the same."</p>
+    
+    {% if message %}
+        <div class="death-msg">{{ message }}</div>
+    {% endif %}
+
+    <form class="input-group" action="/start" method="POST">
+        <input type="text" name="name" placeholder="Name your Wanderer" required autocomplete="off">
+        <button type="submit">Enter the Woods</button>
+    </form>
 </body>
 </html>

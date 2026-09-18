@@ -1,61 +1,234 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Greenroot Adventure - {{ session.location }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Forge - Active Link</title>
+    <style>
+        body {
+            background-color: #0a0e14;
+            color: #e6edf3;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .game-board {
+            width: 100%;
+            max-width: 500px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Top Bar: Stats */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #0d1117;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #00ffff;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-icon { color: #00ffff; }
+        .stat-gold { color: #ffeb3b; }
+        .stat-hp { color: #ff00ff; }
+
+        /* The Monster Arena */
+        .arena {
+            text-align: center;
+            padding: 30px 10px;
+            background: linear-gradient(180deg, rgba(255,0,255,0.05) 0%, rgba(22,27,34,1) 100%);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .monster-name {
+            color: #ff00ff;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+
+        .hp-bar-bg {
+            background: #30363d;
+            height: 15px;
+            border-radius: 10px;
+            width: 80%;
+            margin: 0 auto;
+            overflow: hidden;
+            border: 1px solid #0d1117;
+        }
+
+        .hp-bar-fill {
+            background: #ff00ff;
+            height: 100%;
+            width: {{ (session.monster_hp / session.monster_max_hp) * 100 }}%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+        
+        .hp-text { font-size: 0.9rem; margin-top: 5px; color: #8b949e; }
+
+        /* Message Log */
+        .log-box {
+            background: #0d1117;
+            border: 1px dotted #30363d;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #00ffff;
+            text-align: center;
+            min-height: 24px;
+        }
+
+        /* Letter Tiles */
+        .letters-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .letter-tile {
+            background: #0d1117;
+            border: 2px solid #30363d;
+            color: #e6edf3;
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .letter-tile:hover {
+            border-color: #00ffff;
+            color: #00ffff;
+            transform: translateY(-2px);
+        }
+
+        .letter-tile:active { transform: translateY(2px); }
+
+        /* Action Form */
+        .action-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .word-input {
+            background: #0d1117;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            border-radius: 8px;
+            outline: none;
+            font-family: inherit;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1) inset;
+        }
+        
+        .word-input::placeholder { color: #30363d; letter-spacing: normal; }
+
+        .btn-attack {
+            background: rgba(0, 255, 255, 0.1);
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-attack:hover {
+            background: #00ffff;
+            color: #0d1117;
+            box-shadow: 0 0 15px #00ffff;
+        }
+    </style>
 </head>
-<body style="font-family: sans-serif; max-width: 650px; margin: 40px auto; padding: 25px; background: #f4f4f9; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-    <h2>🌾 Location: {{ session.location }}</h2>
-    <p><strong>Hero:</strong> {{ session.name }} | <strong>HP:</strong> {{ session.hp }}/{{ session.max_hp }} | <strong>Gold:</strong> 🪙 {{ session.gold }}</p>
-    <p><strong>Inventory (Seeds):</strong> Tomatoes: {{ session.inventory.tomato_seeds }}, Corn: {{ session.inventory.corn_seeds }}</p>
-    <p><strong>Harvested Crops:</strong> Tomatoes: {{ session.crops.tomatoes }}, Corn: {{ session.crops.corn }}</p>
+<body>
+
+<div class="game-board">
     
-    <div style="background: #e9ecef; padding: 12px; border-left: 4px solid #2d6a4f; margin: 20px 0; border-radius: 4px;">
-        <p style="margin: 0;"><strong>Log:</strong> {{ session.message }}</p>
+    <!-- Top Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-item"><span class="stat-icon">👤</span> {{ session.name }} (Lvl {{ session.level }})</div>
+        <div class="stat-item stat-hp"><span class="stat-icon">❤️</span> {{ session.hp }}/{{ session.max_hp }}</div>
+        <div class="stat-item stat-gold"><span class="stat-icon">🪙</span> {{ session.gold }}</div>
     </div>
 
-    <h3>Available Actions:</h3>
-    
-    {% if session.location == 'Farm Homestead' %}
-        <p><strong>Farm Plot Status:</strong> <code>{{ session.plot_state.upper() }}</code> {% if session.crop_type %}(Growing: {{ session.crop_type }}){% endif %}</p>
-        <form action="/action" method="POST">
-            {% if session.plot_state == 'empty' %}
-                <button name="action" value="plant_tomato" style="padding: 10px 15px; background: #52b788; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🌱 Plant Tomato Seeds</button>
-            {% elif session.plot_state == 'growing' %}
-                <button name="action" value="tend_plot" style="padding: 10px 15px; background: #40916c; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">💧 Tend / Water Plot</button>
-            {% elif session.plot_state == 'ready' %}
-                <button name="action" value="harvest_plot" style="padding: 10px 15px; background: #d4a373; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🎉 Harvest Crops</button>
-            {% endif %}
-        </form>
-        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
-        <h4>Travel Paths:</h4>
-        <form action="/action" method="POST">
-            <button name="action" value="travel_north" style="padding: 8px 12px; margin: 3px; cursor: pointer;">North ➔ Wild Fields</button>
-            <button name="action" value="travel_east" style="padding: 8px 12px; margin: 3px; cursor: pointer;">East ➔ Village Market</button>
-        </form>
+    <!-- Message Log -->
+    <div class="log-box">
+        {{ session.message }}
+    </div>
 
-    {% elif session.location == 'Village Market' %}
-        <form action="/action" method="POST">
-            <button name="action" value="buy_tomato_seeds" style="padding: 10px 15px; background: #52b788; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">🪙 Buy Tomato Seeds (10 Gold)</button>
-            <button name="action" value="sell_crops" style="padding: 10px 15px; background: #d4a373; color: white; border: none; margin: 5px; cursor: pointer; border-radius: 4px;">💰 Sell All Harvested Crops</button>
-        </form>
-        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
-        <h4>Travel Paths:</h4>
-        <form action="/action" method="POST">
-            <button name="action" value="travel_west" style="padding: 8px 12px; margin: 3px; cursor: pointer;">West ➔ Farm Homestead</button>
-        </form>
+    <!-- The Monster Arena -->
+    <div class="arena">
+        <h2 class="monster-name">TARGET: {{ session.monster_name }}</h2>
+        <div class="hp-bar-bg">
+            <div class="hp-bar-fill"></div>
+        </div>
+        <div class="hp-text">{{ session.monster_hp }} / {{ session.monster_max_hp }} HP</div>
+    </div>
 
-    {% elif session.location == 'Wild Fields' %}
-        <p>Overgrown grasslands where wild elements can be found.</p>
-        <form action="/action" method="POST">
-            <button name="action" value="travel_south" style="padding: 8px 12px; margin: 3px; cursor: pointer;">South ➔ Farm Homestead</button>
-            <button name="action" value="travel_east" style="padding: 8px 12px; margin: 3px; cursor: pointer;">East ➔ Deep Forest</button>
-        </form>
+    <!-- The Available Letters -->
+    <div style="text-align: center; color: #8b949e; margin-bottom: 10px; font-size: 0.9rem;">AVAILABLE DATA NODES:</div>
+    <div class="letters-container">
+        {% for letter in session.current_letters %}
+            <div class="letter-tile" onclick="addLetter('{{ letter }}')">{{ letter }}</div>
+        {% endfor %}
+    </div>
 
-    {% elif session.location == 'Deep Forest' %}
-        <p>A dense, shadowed woodland fraught with high-tier risk.</p>
-        <form action="/action" method="POST">
-            <button name="action" value="travel_west" style="padding: 8px 12px; margin: 3px; cursor: pointer;">West ➔ Wild Fields</button>
-        </form>
-    {% endif %}
+    <!-- Input and Attack Button -->
+    <form class="action-form" action="/attack" method="POST">
+        <input type="text" id="word-input" class="word-input" name="word" placeholder="ASSEMBLE WORD" required readonly>
+        
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-attack" style="flex: 1; border-color: #ff00ff; color: #ff00ff;" onclick="clearInput()">Clear</button>
+            <button type="submit" class="btn-attack" style="flex: 2;">Execute Attack</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Simple JavaScript to make the letter tiles clickable!
+    function addLetter(letter) {
+        const input = document.getElementById('word-input');
+        input.value += letter;
+    }
+
+    function clearInput() {
+        document.getElementById('word-input').value = '';
+    }
+</script>
+
 </body>
 </html>

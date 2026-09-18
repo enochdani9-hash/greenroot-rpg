@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Custom RPG Engine</title>
+    <title>The Ashen Path - Engine</title>
     <style>
         body {
             background-color: #050505;
             color: #d4c5b0;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Palatino Linotype', serif;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -18,43 +18,51 @@
 
         /* Character Creation UI */
         #creation-ui {
-            background: #111;
+            background: rgba(17, 17, 17, 0.9);
             padding: 40px;
-            border: 2px solid #332b22;
-            border-radius: 8px;
+            border: 1px solid #5a4b38;
+            border-radius: 4px;
             text-align: center;
             z-index: 10;
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
         }
 
-        .input-group { margin-bottom: 20px; }
+        h2 { color: #a39171; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 30px; }
+
+        .input-group { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center;}
         
-        select, input {
-            background: #222;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 10px;
+        select, input[type="text"] {
+            background: #0a0a0a;
+            color: #c4b5a3;
+            border: 1px solid #332b22;
+            padding: 12px;
             font-size: 1.1rem;
             font-family: inherit;
+            width: 250px;
+            text-align: center;
+            outline: none;
         }
 
         button {
-            background: #440000;
-            color: #fff;
-            border: 1px solid #ff4444;
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            background: #141414;
+            color: #a39171;
+            border: 1px solid #5a4b38;
+            padding: 15px 40px;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        button:hover { background: #ff4444; color: #000; }
+        button:hover { background: #1a1a1a; color: #e6d8c3; border-color: #8b0000; }
 
-        /* The Game Canvas (Hidden until character is created) */
+        /* The Game Canvas */
         #gameCanvas {
             display: none;
-            background: #1a1a1a;
+            background: #000;
             border: 2px solid #332b22;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            box-shadow: 0 0 40px rgba(0,0,0,0.9);
         }
     </style>
 </head>
@@ -62,28 +70,21 @@
 
     <!-- UI: Character Creator -->
     <div id="creation-ui">
-        <h2>FORGE YOUR WANDERER</h2>
+        <h2>Forge Your Wanderer</h2>
         
         <div class="input-group">
-            <label>Name: </label>
-            <input type="text" id="heroName" value="Ashen">
+            <input type="text" id="heroName" value="Wanderer" placeholder="Name">
         </div>
 
         <div class="input-group">
-            <label>Class: </label>
             <select id="heroClass">
-                <option value="knight">Fallen Knight (High Health)</option>
-                <option value="rogue">Shadow Rogue (High Speed)</option>
-                <option value="mage">Blood Mage (High Damage)</option>
+                <option value="knight">The Ashen Knight (Heavy)</option>
+                <option value="rogue">The Blind Oracle (Magic)</option>
+                <option value="spirit">The Rootbound Spirit (Wild)</option>
             </select>
         </div>
 
-        <div class="input-group">
-            <label>Aura Color: </label>
-            <input type="color" id="heroColor" value="#ff0000">
-        </div>
-
-        <button onclick="startGame()">Enter the World</button>
+        <button onclick="startGame()">Enter the Woods</button>
     </div>
 
     <!-- UI: The Custom Game Engine Screen -->
@@ -91,56 +92,59 @@
 
     <script>
         // --- CUSTOM GAME ENGINE LOGIC --- //
-        
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const creationUI = document.getElementById("creation-ui");
+
+        // 1. PRE-LOAD THE HD ASSETS
+        const bgImage = new Image();
+        bgImage.src = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80"; 
+        
+        const heroImage = new Image(); 
+        // heroImage.src will be set dynamically based on what the player chooses!
 
         // The Player Object
         let player = {
             name: "",
             charClass: "",
-            x: 480,
-            y: 270,
-            w: 40,
-            h: 40,
-            color: "",
-            speed: 4,
+            x: 450,
+            y: 250,
+            w: 80, // Increased size for the HD sprite
+            h: 80,
+            speed: 5,
             hp: 100
         };
 
-        // Keyboard State Tracker
         const keys = {};
         window.addEventListener("keydown", (e) => keys[e.code] = true);
         window.addEventListener("keyup", (e) => keys[e.code] = false);
 
-        // Transition from Creation to Gameplay
         function startGame() {
-            // Apply creation choices to the player object
             player.name = document.getElementById("heroName").value;
             player.charClass = document.getElementById("heroClass").value;
-            player.color = document.getElementById("heroColor").value;
 
-            // Adjust stats based on class choice
-            if (player.charClass === "rogue") player.speed = 7;
-            if (player.charClass === "knight") player.hp = 150;
+            // Dynamically assign the HD character portrait based on the chosen class!
+            if (player.charClass === "knight") {
+                heroImage.src = "https://images.unsplash.com/photo-1605639732731-9a7493a38a7c?auto=format&fit=crop&w=150&q=80";
+                player.hp = 150;
+            } else if (player.charClass === "rogue") {
+                heroImage.src = "https://images.unsplash.com/photo-1541535881962-3bb3ecbb3bbb?auto=format&fit=crop&w=150&q=80";
+                player.speed = 7;
+            } else if (player.charClass === "spirit") {
+                heroImage.src = "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?auto=format&fit=crop&w=150&q=80";
+            }
 
-            // Hide UI, Show Canvas
             creationUI.style.display = "none";
             canvas.style.display = "block";
-
-            // Start the Engine Loop
             requestAnimationFrame(engineLoop);
         }
 
-        // The Core Engine Loop (Runs 60 times per second)
         function engineLoop() {
             updatePhysics();
             renderGraphics();
             requestAnimationFrame(engineLoop);
         }
 
-        // Handle all math, movement, and collision
         function updatePhysics() {
             if (keys["KeyW"] && player.y > 0) player.y -= player.speed;
             if (keys["KeyS"] && player.y < canvas.height - player.h) player.y += player.speed;
@@ -148,30 +152,43 @@
             if (keys["KeyD"] && player.x < canvas.width - player.w) player.x += player.speed;
         }
 
-        // Handle all drawing to the screen
         function renderGraphics() {
-            // 1. Clear the previous frame (draw the floor)
-            ctx.fillStyle = "#161616";
+            // 1. Draw the HD Background Image (Replacing the black void)
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+            // 2. Add a dark vignette overlay for atmosphere
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Draw some basic environment (trees/walls)
-            ctx.fillStyle = "#0a0a0a";
-            ctx.fillRect(100, 100, 80, 150); // Pillar 1
-            ctx.fillRect(700, 300, 80, 150); // Pillar 2
+            // 3. Draw the Player's chosen HD Sprite (Replacing the red square)
+            if (heroImage.complete) {
+                // Creates a circular clipping mask so the image looks like an RPG token
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(player.x + (player.w/2), player.y + (player.h/2), player.w/2, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(heroImage, player.x, player.y, player.w, player.h);
+                ctx.restore();
+                
+                // Add a border ring around the character token
+                ctx.strokeStyle = "#a39171";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(player.x + (player.w/2), player.y + (player.h/2), player.w/2, 0, Math.PI * 2, true);
+                ctx.stroke();
+            }
 
-            // 3. Draw the Player
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.w, player.h);
-
-            // 4. Draw Player Name & Health overhead
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "14px Courier New";
+            // 4. Draw Player Name & Health Bar overhead
+            ctx.fillStyle = "#e6d8c3";
+            ctx.font = "bold 14px 'Palatino Linotype'";
             ctx.textAlign = "center";
-            ctx.fillText(player.name, player.x + (player.w / 2), player.y - 10);
+            ctx.fillText(player.name, player.x + (player.w / 2), player.y - 15);
             
-            // Health bar
-            ctx.fillStyle = "red";
-            ctx.fillRect(player.x, player.y - 5, player.w, 4);
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillRect(player.x, player.y - 10, player.w, 6);
+            ctx.fillStyle = "#8b0000";
+            ctx.fillRect(player.x, player.y - 10, player.w * (player.hp / 150), 6);
         }
     </script>
 </body>

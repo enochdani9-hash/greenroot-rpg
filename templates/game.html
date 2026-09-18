@@ -2,233 +2,93 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Forge - Active Link</title>
+    <title>Immersive RPG</title>
     <style>
         body {
-            background-color: #0a0e14;
-            color: #e6edf3;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #111;
+            color: #ddd;
+            font-family: 'Georgia', serif; /* A more literary, storytelling font */
             margin: 0;
-            padding: 20px;
             display: flex;
             justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-
-        .game-board {
+        .story-container {
+            max-width: 600px;
             width: 100%;
-            max-width: 500px;
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border-top: 4px solid #8a2be2;
         }
-
-        /* Top Bar: Stats */
-        .stats-bar {
+        .header {
             display: flex;
             justify-content: space-between;
-            background: #0d1117;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border-left: 4px solid #00ffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            color: #888;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
             margin-bottom: 20px;
+        }
+        .character-name {
+            color: #8a2be2;
             font-weight: bold;
-        }
-        
-        .stat-item { display: flex; align-items: center; gap: 5px; }
-        .stat-icon { color: #00ffff; }
-        .stat-gold { color: #ffeb3b; }
-        .stat-hp { color: #ff00ff; }
-
-        /* The Monster Arena */
-        .arena {
-            text-align: center;
-            padding: 30px 10px;
-            background: linear-gradient(180deg, rgba(255,0,255,0.05) 0%, rgba(22,27,34,1) 100%);
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .monster-name {
-            color: #ff00ff;
-            font-size: 1.8rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin: 0 0 10px 0;
-            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
-        }
-
-        .hp-bar-bg {
-            background: #30363d;
-            height: 15px;
-            border-radius: 10px;
-            width: 80%;
-            margin: 0 auto;
-            overflow: hidden;
-            border: 1px solid #0d1117;
-        }
-
-        .hp-bar-fill {
-            background: #ff00ff;
-            height: 100%;
-            width: {{ (session.monster_hp / session.monster_max_hp) * 100 }}%;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 10px #ff00ff;
-        }
-        
-        .hp-text { font-size: 0.9rem; margin-top: 5px; color: #8b949e; }
-
-        /* Message Log */
-        .log-box {
-            background: #0d1117;
-            border: 1px dotted #30363d;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            color: #00ffff;
-            text-align: center;
-            min-height: 24px;
-        }
-
-        /* Letter Tiles */
-        .letters-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .letter-tile {
-            background: #0d1117;
-            border: 2px solid #30363d;
-            color: #e6edf3;
-            font-size: 1.5rem;
-            font-weight: bold;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .letter-tile:hover {
-            border-color: #00ffff;
-            color: #00ffff;
-            transform: translateY(-2px);
-        }
-
-        .letter-tile:active { transform: translateY(2px); }
-
-        /* Action Form */
-        .action-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .word-input {
-            background: #0d1117;
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            padding: 15px;
-            font-size: 1.5rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            border-radius: 8px;
-            outline: none;
-            font-family: inherit;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1) inset;
-        }
-        
-        .word-input::placeholder { color: #30363d; letter-spacing: normal; }
-
-        .btn-attack {
-            background: rgba(0, 255, 255, 0.1);
-            color: #00ffff;
-            border: 2px solid #00ffff;
-            padding: 15px;
             font-size: 1.2rem;
-            font-weight: bold;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            border-radius: 8px;
+            letter-spacing: 2px;
+        }
+        .story-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 40px;
+        }
+        .choice-btn {
+            display: block;
+            width: 100%;
+            background: #222;
+            color: #ddd;
+            border: 1px solid #444;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            text-align: left;
             cursor: pointer;
-            transition: all 0.3s;
+            border-radius: 4px;
+            transition: 0.2s;
             font-family: inherit;
         }
-
-        .btn-attack:hover {
-            background: #00ffff;
-            color: #0d1117;
-            box-shadow: 0 0 15px #00ffff;
+        .choice-btn:hover {
+            background: #333;
+            border-color: #8a2be2;
+            padding-left: 20px; /* Slight indent animation on hover */
         }
     </style>
 </head>
 <body>
 
-<div class="game-board">
+<div class="story-container">
+    <div class="header">
+        <span>📍 {{ scene.location }}</span>
+        <span>❤️ HP: {{ session.hp }} | 🤝 Trust: {{ session.trust }}</span>
+    </div>
     
-    <!-- Top Stats Bar -->
-    <div class="stats-bar">
-        <div class="stat-item"><span class="stat-icon">👤</span> {{ session.name }} (Lvl {{ session.level }})</div>
-        <div class="stat-item stat-hp"><span class="stat-icon">❤️</span> {{ session.hp }}/{{ session.max_hp }}</div>
-        <div class="stat-item stat-gold"><span class="stat-icon">🪙</span> {{ session.gold }}</div>
+    <div class="character-name">{{ scene.character }}</div>
+    <div class="story-text">
+        {{ scene.text }}
     </div>
 
-    <!-- Message Log -->
-    <div class="log-box">
-        {{ session.message }}
-    </div>
-
-    <!-- The Monster Arena -->
-    <div class="arena">
-        <h2 class="monster-name">TARGET: {{ session.monster_name }}</h2>
-        <div class="hp-bar-bg">
-            <div class="hp-bar-fill"></div>
-        </div>
-        <div class="hp-text">{{ session.monster_hp }} / {{ session.monster_max_hp }} HP</div>
-    </div>
-
-    <!-- The Available Letters -->
-    <div style="text-align: center; color: #8b949e; margin-bottom: 10px; font-size: 0.9rem;">AVAILABLE DATA NODES:</div>
-    <div class="letters-container">
-        {% for letter in session.current_letters %}
-            <div class="letter-tile" onclick="addLetter('{{ letter }}')">{{ letter }}</div>
+    <form action="/make_choice" method="POST">
+        {% for choice in scene.choices %}
+            <button type="submit" name="choice_index" value="{{ loop.index0 }}" class="choice-btn">
+                > {{ choice.text }}
+            </button>
         {% endfor %}
-    </div>
-
-    <!-- Input and Attack Button -->
-    <form class="action-form" action="/attack" method="POST">
-        <input type="text" id="word-input" class="word-input" name="word" placeholder="ASSEMBLE WORD" required readonly>
-        
-        <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-attack" style="flex: 1; border-color: #ff00ff; color: #ff00ff;" onclick="clearInput()">Clear</button>
-            <button type="submit" class="btn-attack" style="flex: 2;">Execute Attack</button>
-        </div>
     </form>
 </div>
-
-<script>
-    // Simple JavaScript to make the letter tiles clickable!
-    function addLetter(letter) {
-        const input = document.getElementById('word-input');
-        input.value += letter;
-    }
-
-    function clearInput() {
-        document.getElementById('word-input').value = '';
-    }
-</script>
 
 </body>
 </html>
